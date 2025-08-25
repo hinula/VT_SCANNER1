@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VT Scanner - VirusTotal Dosya Analizi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .upload-section {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            margin: 30px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8ecff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .selected-file {
+            background: #e8f5e8;
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .selected-file.show {
+            display: block;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-icon {
+            font-size: 2rem;
+            color: #4caf50;
+        }
+
+        .file-details h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .file-details p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .scan-button {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+
+        .scan-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .scan-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .progress-section {
+            padding: 40px;
+            display: none;
+        }
+
+        .progress-section.show {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .status-text {
+            text-align: center;
+            color: #666;
+            font-size: 1.1rem;
+            margin: 20px 0;
+        }
+
+        .results-section {
+            padding: 40px;
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .result-card {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .scan-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .status-malicious {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .status-clean {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .status-unknown {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .download-pdf {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .download-pdf:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .error-message {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #c62828;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .upload-section, .progress-section, .results-section {
+                padding: 30px 20px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ VT Scanner</h1>
+            <p>Dosyalarınızı güvenle analiz edin</p>
+        </div>
+
+        <div class="upload-section">
+            <h2>Dosya Seçin</h2>
+            <p>Analiz etmek istediğiniz dosyayı yükleyin veya sürükleyip bırakın</p>
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Dosya seçin veya sürükleyin</div>
+                <div class="upload-subtext">Maksimum dosya boyutu: 32MB</div>
+                <input type="file" class="file-input" id="fileInput" accept="*/*">
+            </div>
+
+            <div class="selected-file" id="selectedFile">
+                <div class="file-info">
+                    <div class="file-icon">📄</div>
+                    <div class="file-details">
+                        <h4 id="fileName">Dosya adı</h4>
+                        <p id="fileSize">Dosya boyutu</p>
+                    </div>
+                </div>
+            </div>
+
+            <button class="scan-button" id="scanButton" disabled>
+                <span class="loading-spinner" id="loadingSpinner" style="display: none;"></span>
+                Analizi Başlat
+            </button>
+
+            <div class="error-message" id="errorMessage">
+                <strong>Hata:</strong> <span id="errorText"></span>
+            </div>
+        </div>
+
+        <div class="progress-section" id="progressSection">
+            <h2>Analiz Devam Ediyor</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="status-text" id="statusText">Dosya yükleniyor...</div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <h2>Analiz Sonuçları</h2>
+            
+            <div class="result-card">
+                <div class="result-header">
+                    <h3>Güvenlik Analizi</h3>
+                    <span class="scan-status" id="scanStatus">Analiz ediliyor</span>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="maliciousCount">-</div>
+                        <div class="stat-label">Zararlı</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="cleanCount">-</div>
+                        <div class="stat-label">Temiz</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalCount">-</div>
+                        <div class="stat-label">Toplam</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="detectionRate">-</div>
+                        <div class="stat-label">Tespit Oranı</div>
+                    </div>
+                </div>
+
+                <div id="scanDetails">
+                    <h4>Detaylı Bilgiler</h4>
+                    <p id="scanDetailsText">Analiz tamamlandığında detaylı bilgiler burada görüntülenecek.</p>
+                </div>
+
+                <button class="download-pdf" id="downloadPdf" style="display: none;">
+                    📄 PDF Raporu İndir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class VTScanner {
+            constructor() {
+                this.initializeElements();
+                this.bindEvents();
+                this.currentFile = null;
+                this.scanId = null;
+            }
+
+            initializeElements() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.fileInput = document.getElementById('fileInput');
+                this.selectedFile = document.getElementById('selectedFile');
+                this.fileName = document.getElementById('fileName');
+                this.fileSize = document.getElementById('fileSize');
+                this.scanButton = document.getElementById('scanButton');
+                this.loadingSpinner = document.getElementById('loadingSpinner');
+                this.errorMessage = document.getElementById('errorMessage');
+                this.errorText = document.getElementById('errorText');
+                this.progressSection = document.getElementById('progressSection');
+                this.progressFill = document.getElementById('progressFill');
+                this.statusText = document.getElementById('statusText');
+                this.resultsSection = document.getElementById('resultsSection');
+                this.scanStatus = document.getElementById('scanStatus');
+                this.maliciousCount = document.getElementById('maliciousCount');
+                this.cleanCount = document.getElementById('cleanCount');
+                this.totalCount = document.getElementById('totalCount');
+                this.detectionRate = document.getElementById('detectionRate');
+                this.scanDetailsText = document.getElementById('scanDetailsText');
+                this.downloadPdf = document.getElementById('downloadPdf');
+            }
+
+            bindEvents() {
+                this.uploadArea.addEventListener('click', () => this.fileInput.click());
+                this.uploadArea.addEventListener('dragover', (e) => this.handleDragOver(e));
+                this.uploadArea.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+                this.uploadArea.addEventListener('drop', (e) => this.handleDrop(e));
+                this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+                this.scanButton.addEventListener('click', () => this.startScan());
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                this.uploadArea.classList.add('dragover');
+            }
+
+            handleDragLeave(e) {
+                e.preventDefault();
+                this.uploadArea.classList.remove('dragover');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                this.uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.processFile(files[0]);
+                }
+            }
+
+            handleFileSelect(e) {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    this.processFile(files[0]);
+                }
+            }
+
+            processFile(file) {
+                // Dosya boyutu kontrolü (32MB)
+                if (file.size > 32 * 1024 * 1024) {
+                    this.showError('Dosya boyutu 32MB\'dan büyük olamaz.');
+                    return;
+                }
+
+                this.currentFile = file;
+                this.fileName.textContent = file.name;
+                this.fileSize.textContent = this.formatFileSize(file.size);
+                this.selectedFile.classList.add('show');
+                this.scanButton.disabled = false;
+                this.hideError();
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            async startScan() {
+                if (!this.currentFile) return;
+
+                this.showProgress();
+                this.scanButton.disabled = true;
+                this.loadingSpinner.style.display = 'inline-block';
+
+                try {
+                    // Simüle edilmiş analiz süreci
+                    await this.simulateScan();
+                } catch (error) {
+                    this.showError('Analiz sırasında bir hata oluştu: ' + error.message);
+                    this.hideProgress();
+                }
+            }
+
+            async simulateScan() {
+                const steps = [
+                    { progress: 10, status: 'Dosya yükleniyor...' },
+                    { progress: 25, status: 'VirusTotal API\'ye gönderiliyor...' },
+                    { progress: 50, status: 'Dosya analiz ediliyor...' },
+                    { progress: 75, status: 'Sonuçlar işleniyor...' },
+                    { progress: 100, status: 'Analiz tamamlandı!' }
+                ];
+
+                for (let i = 0; i < steps.length; i++) {
+                    await this.updateProgress(steps[i].progress, steps[i].status);
+                    await this.delay(1000 + Math.random() * 1000);
+                }
+
+                this.showResults();
+            }
+
+            updateProgress(progress, status) {
+                this.progressFill.style.width = progress + '%';
+                this.statusText.textContent = status;
+            }
+
+            showProgress() {
+                this.progressSection.classList.add('show');
+                this.uploadSection.style.display = 'none';
+            }
+
+            hideProgress() {
+                this.progressSection.classList.remove('show');
+                this.uploadSection.style.display = 'block';
+                this.scanButton.disabled = false;
+                this.loadingSpinner.style.display = 'none';
+            }
+
+            showResults() {
+                this.progressSection.classList.remove('show');
+                this.resultsSection.classList.add('show');
+                
+                // Simüle edilmiş sonuçlar
+                const results = this.generateMockResults();
+                this.displayResults(results);
+            }
+
+            generateMockResults() {
+                const total = 70 + Math.floor(Math.random() * 30);
+                const malicious = Math.floor(Math.random() * 10);
+                const clean = total - malicious;
+                const detectionRate = ((malicious / total) * 100).toFixed(1);
+
+                return {
+                    malicious,
+                    clean,
+                    total,
+                    detectionRate,
+                    status: malicious > 0 ? 'malicious' : 'clean'
+                };
+            }
+
+            displayResults(results) {
+                this.scanStatus.textContent = results.status === 'malicious' ? 'Zararlı Tespit Edildi' : 'Temiz';
+                this.scanStatus.className = `scan-status status-${results.status}`;
+                
+                this.maliciousCount.textContent = results.malicious;
+                this.cleanCount.textContent = results.clean;
+                this.totalCount.textContent = results.total;
+                this.detectionRate.textContent = results.detectionRate + '%';
+
+                this.scanDetailsText.textContent = `Bu dosya ${results.total} antivirüs motoru tarafından analiz edildi. ${results.malicious} motor zararlı yazılım tespit etti.`;
+
+                this.downloadPdf.style.display = 'inline-block';
+            }
+
+            showError(message) {
+                this.errorText.textContent = message;
+                this.errorMessage.classList.add('show');
+            }
+
+            hideError() {
+                this.errorMessage.classList.remove('show');
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // Uygulama başlatıldığında
+        document.addEventListener('DOMContentLoaded', () => {
+            new VTScanner();
+        });
+    </script>
+</body>
+</html>
