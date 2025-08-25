@@ -414,201 +414,201 @@
     </div>
 
     <script>
-        class VTScanner {
-            constructor() {
-                this.initializeElements();
-                this.bindEvents();
-                this.currentFile = null;
-                this.scanId = null;
-            }
+    class VTScanner {
+        constructor() {
+            this.initializeElements();
+            this.bindEvents();
+            this.currentFile = null;
+        }
 
-            initializeElements() {
-                this.uploadArea = document.getElementById('uploadArea');
-                this.fileInput = document.getElementById('fileInput');
-                this.selectedFile = document.getElementById('selectedFile');
-                this.fileName = document.getElementById('fileName');
-                this.fileSize = document.getElementById('fileSize');
-                this.scanButton = document.getElementById('scanButton');
-                this.loadingSpinner = document.getElementById('loadingSpinner');
-                this.errorMessage = document.getElementById('errorMessage');
-                this.errorText = document.getElementById('errorText');
-                this.progressSection = document.getElementById('progressSection');
-                this.progressFill = document.getElementById('progressFill');
-                this.statusText = document.getElementById('statusText');
-                this.resultsSection = document.getElementById('resultsSection');
-                this.scanStatus = document.getElementById('scanStatus');
-                this.maliciousCount = document.getElementById('maliciousCount');
-                this.cleanCount = document.getElementById('cleanCount');
-                this.totalCount = document.getElementById('totalCount');
-                this.detectionRate = document.getElementById('detectionRate');
-                this.scanDetailsText = document.getElementById('scanDetailsText');
-                this.downloadPdf = document.getElementById('downloadPdf');
-            }
+        initializeElements() {
+            this.uploadArea = document.getElementById('uploadArea');
+            this.fileInput = document.getElementById('fileInput');
+            this.selectedFile = document.getElementById('selectedFile');
+            this.fileName = document.getElementById('fileName');
+            this.fileSize = document.getElementById('fileSize');
+            this.scanButton = document.getElementById('scanButton');
+            this.loadingSpinner = document.getElementById('loadingSpinner');
+            this.errorMessage = document.getElementById('errorMessage');
+            this.errorText = document.getElementById('errorText');
+            this.progressSection = document.getElementById('progressSection');
+            this.progressFill = document.getElementById('progressFill');
+            this.statusText = document.getElementById('statusText');
+            this.resultsSection = document.getElementById('resultsSection');
+            this.scanStatus = document.getElementById('scanStatus');
+            this.maliciousCount = document.getElementById('maliciousCount');
+            this.cleanCount = document.getElementById('cleanCount');
+            this.totalCount = document.getElementById('totalCount');
+            this.detectionRate = document.getElementById('detectionRate');
+            this.scanDetailsText = document.getElementById('scanDetailsText');
+            this.downloadPdf = document.getElementById('downloadPdf');
+        }
 
-            bindEvents() {
-                this.uploadArea.addEventListener('click', () => this.fileInput.click());
-                this.uploadArea.addEventListener('dragover', (e) => this.handleDragOver(e));
-                this.uploadArea.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-                this.uploadArea.addEventListener('drop', (e) => this.handleDrop(e));
-                this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
-                this.scanButton.addEventListener('click', () => this.startScan());
-            }
+        bindEvents() {
+            this.uploadArea.addEventListener('click', () => this.fileInput.click());
+            this.uploadArea.addEventListener('dragover', (e) => this.handleDragOver(e));
+            this.uploadArea.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+            this.uploadArea.addEventListener('drop', (e) => this.handleDrop(e));
+            this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+            this.scanButton.addEventListener('click', () => this.startScan());
+        }
 
-            handleDragOver(e) {
-                e.preventDefault();
-                this.uploadArea.classList.add('dragover');
-            }
+        handleDragOver(e) {
+            e.preventDefault();
+            this.uploadArea.classList.add('dragover');
+        }
 
-            handleDragLeave(e) {
-                e.preventDefault();
-                this.uploadArea.classList.remove('dragover');
-            }
+        handleDragLeave(e) {
+            e.preventDefault();
+            this.uploadArea.classList.remove('dragover');
+        }
 
-            handleDrop(e) {
-                e.preventDefault();
-                this.uploadArea.classList.remove('dragover');
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    this.processFile(files[0]);
-                }
-            }
-
-            handleFileSelect(e) {
-                const files = e.target.files;
-                if (files.length > 0) {
-                    this.processFile(files[0]);
-                }
-            }
-
-            processFile(file) {
-                // Dosya boyutu kontrolü (32MB)
-                if (file.size > 32 * 1024 * 1024) {
-                    this.showError('Dosya boyutu 32MB\'dan büyük olamaz.');
-                    return;
-                }
-
-                this.currentFile = file;
-                this.fileName.textContent = file.name;
-                this.fileSize.textContent = this.formatFileSize(file.size);
-                this.selectedFile.classList.add('show');
-                this.scanButton.disabled = false;
-                this.hideError();
-            }
-
-            formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
-
-            async startScan() {
-                if (!this.currentFile) return;
-
-                this.showProgress();
-                this.scanButton.disabled = true;
-                this.loadingSpinner.style.display = 'inline-block';
-
-                try {
-                    // Simüle edilmiş analiz süreci
-                    await this.simulateScan();
-                } catch (error) {
-                    this.showError('Analiz sırasında bir hata oluştu: ' + error.message);
-                    this.hideProgress();
-                }
-            }
-
-            async simulateScan() {
-                const steps = [
-                    { progress: 10, status: 'Dosya yükleniyor...' },
-                    { progress: 25, status: 'VirusTotal API\'ye gönderiliyor...' },
-                    { progress: 50, status: 'Dosya analiz ediliyor...' },
-                    { progress: 75, status: 'Sonuçlar işleniyor...' },
-                    { progress: 100, status: 'Analiz tamamlandı!' }
-                ];
-
-                for (let i = 0; i < steps.length; i++) {
-                    await this.updateProgress(steps[i].progress, steps[i].status);
-                    await this.delay(1000 + Math.random() * 1000);
-                }
-
-                this.showResults();
-            }
-
-            updateProgress(progress, status) {
-                this.progressFill.style.width = progress + '%';
-                this.statusText.textContent = status;
-            }
-
-            showProgress() {
-                this.progressSection.classList.add('show');
-                this.uploadSection.style.display = 'none';
-            }
-
-            hideProgress() {
-                this.progressSection.classList.remove('show');
-                this.uploadSection.style.display = 'block';
-                this.scanButton.disabled = false;
-                this.loadingSpinner.style.display = 'none';
-            }
-
-            showResults() {
-                this.progressSection.classList.remove('show');
-                this.resultsSection.classList.add('show');
-                
-                // Simüle edilmiş sonuçlar
-                const results = this.generateMockResults();
-                this.displayResults(results);
-            }
-
-            generateMockResults() {
-                const total = 70 + Math.floor(Math.random() * 30);
-                const malicious = Math.floor(Math.random() * 10);
-                const clean = total - malicious;
-                const detectionRate = ((malicious / total) * 100).toFixed(1);
-
-                return {
-                    malicious,
-                    clean,
-                    total,
-                    detectionRate,
-                    status: malicious > 0 ? 'malicious' : 'clean'
-                };
-            }
-
-            displayResults(results) {
-                this.scanStatus.textContent = results.status === 'malicious' ? 'Zararlı Tespit Edildi' : 'Temiz';
-                this.scanStatus.className = `scan-status status-${results.status}`;
-                
-                this.maliciousCount.textContent = results.malicious;
-                this.cleanCount.textContent = results.clean;
-                this.totalCount.textContent = results.total;
-                this.detectionRate.textContent = results.detectionRate + '%';
-
-                this.scanDetailsText.textContent = `Bu dosya ${results.total} antivirüs motoru tarafından analiz edildi. ${results.malicious} motor zararlı yazılım tespit etti.`;
-
-                this.downloadPdf.style.display = 'inline-block';
-            }
-
-            showError(message) {
-                this.errorText.textContent = message;
-                this.errorMessage.classList.add('show');
-            }
-
-            hideError() {
-                this.errorMessage.classList.remove('show');
-            }
-
-            delay(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
+        handleDrop(e) {
+            e.preventDefault();
+            this.uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                this.processFile(files[0]);
             }
         }
 
-        // Uygulama başlatıldığında
-        document.addEventListener('DOMContentLoaded', () => {
-            new VTScanner();
-        });
-    </script>
+        handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                this.processFile(files[0]);
+            }
+        }
+
+        processFile(file) {
+            if (file.size > 32 * 1024 * 1024) {
+                this.showError('Dosya boyutu 32MB\'dan büyük olamaz.');
+                return;
+            }
+
+            this.currentFile = file;
+            this.fileName.textContent = file.name;
+            this.fileSize.textContent = this.formatFileSize(file.size);
+            this.selectedFile.classList.add('show');
+            this.scanButton.disabled = false;
+            this.hideError();
+        }
+
+        formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async startScan() {
+            if (!this.currentFile) return;
+
+            this.showProgress();
+            this.scanButton.disabled = true;
+            this.loadingSpinner.style.display = 'inline-block';
+
+            try {
+                // ✅ 1. Dosya yükleme
+                this.updateProgress(20, 'Dosya yükleniyor...');
+                const uploadUrl = "https://918pp2o0wl.execute-api.eu-central-1.amazonaws.com/dev/upload";
+
+                const uploadResponse = await fetch(uploadUrl, {
+                    method: "POST",
+                    body: this.currentFile
+                });
+
+                if (!uploadResponse.ok) throw new Error("Dosya yüklenemedi.");
+                const { fileKey } = await uploadResponse.json();
+
+                // ✅ 2. Raporu kontrol et (bekleme loop)
+                this.updateProgress(60, 'Analiz ediliyor...');
+                let reportUrl = null;
+
+                for (let i = 0; i < 10; i++) { // max 10 deneme (örn: 50sn)
+                    await this.delay(5000); // 5 saniye bekle
+                    const reportResponse = await fetch("https://918pp2o0wl.execute-api.eu-central-1.amazonaws.com/dev/get-report", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ fileKey })
+                    });
+
+                    const data = await reportResponse.json();
+                    if (data.download_url) {
+                        reportUrl = data.download_url;
+                        break;
+                    }
+                }
+
+                if (!reportUrl) throw new Error("Rapor zamanında hazırlanamadı.");
+
+                // ✅ 3. Sonuçları göster
+                this.updateProgress(100, 'Analiz tamamlandı!');
+                this.showResults(reportUrl);
+
+            } catch (error) {
+                this.showError('Hata: ' + error.message);
+                this.hideProgress();
+            }
+        }
+
+        updateProgress(progress, status) {
+            this.progressFill.style.width = progress + '%';
+            this.statusText.textContent = status;
+        }
+
+        showProgress() {
+            this.progressSection.classList.add('show');
+            document.querySelector('.upload-section').style.display = 'none';
+        }
+
+        hideProgress() {
+            this.progressSection.classList.remove('show');
+            document.querySelector('.upload-section').style.display = 'block';
+            this.scanButton.disabled = false;
+            this.loadingSpinner.style.display = 'none';
+        }
+
+        showResults(reportUrl) {
+            this.progressSection.classList.remove('show');
+            this.resultsSection.classList.add('show');
+
+            this.scanStatus.textContent = "Analiz Tamamlandı";
+            this.scanStatus.className = `scan-status status-clean`;
+
+            this.maliciousCount.textContent = "-";
+            this.cleanCount.textContent = "-";
+            this.totalCount.textContent = "-";
+            this.detectionRate.textContent = "-";
+
+            this.scanDetailsText.textContent = `Rapor hazırlandı, aşağıdaki bağlantıdan PDF olarak indirebilirsiniz.`;
+
+            this.downloadPdf.style.display = 'inline-block';
+            this.downloadPdf.onclick = () => {
+                window.open(reportUrl, "_blank");
+            };
+
+            this.loadingSpinner.style.display = 'none';
+        }
+
+        showError(message) {
+            this.errorText.textContent = message;
+            this.errorMessage.classList.add('show');
+        }
+
+        hideError() {
+            this.errorMessage.classList.remove('show');
+        }
+
+        delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        new VTScanner();
+    });
+</script>
+
 </body>
 </html>
