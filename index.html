@@ -939,12 +939,24 @@
                     console.log('Response body:', result.body);
                     
                     if (result.statusCode === 200) {
-                        this.scanId = result.body.scan_id; // scanId'yi set et
-                        console.log('Scan ID set to:', this.scanId);
-                        await this.startVTAnalysis(result.body.scan_id);
+                        // Response yapısını kontrol et
+                        if (result.body && result.body.scan_id) {
+                            this.scanId = result.body.scan_id;
+                            console.log('Scan ID set to:', this.scanId);
+                            await this.startVTAnalysis(result.body.scan_id);
+                        } else if (result.scan_id) {
+                            // Body yoksa direkt result'ta olabilir
+                            this.scanId = result.scan_id;
+                            console.log('Scan ID set to (direct):', this.scanId);
+                            await this.startVTAnalysis(result.scan_id);
+                        } else {
+                            console.error('No scan_id found in response:', result);
+                            throw new Error('Scan ID bulunamadı');
+                        }
                     } else {
-                        console.error('API Error:', result.body);
-                        throw new Error(result.body.error || 'Bilinmeyen hata');
+                        const errorMsg = result.body ? result.body.error : result.error || 'Bilinmeyen hata';
+                        console.error('API Error:', errorMsg);
+                        throw new Error(errorMsg);
                     }
                 } catch (error) {
                     this.showError('Analiz sırasında bir hata oluştu: ' + error.message);
