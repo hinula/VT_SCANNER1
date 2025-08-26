@@ -1,211 +1,122 @@
-# 🛡️ Enterprise VT Scanner - Kurumsal Güvenlik Analizi Platformu
+Enterprise VT Scanner
 
-## 📋 Proje Özeti
+Enterprise VT Scanner, kurumsal güvenlik ihtiyaçları için tasarlanmış gelişmiş bir dosya analiz platformudur. Platform, yüklenen dosyaları kapsamlı bir şekilde analiz eder, güvenlik risklerini tespit eder ve profesyonel PDF raporları sunar. Web uygulaması Vercel üzerinde barındırılmakta olup, AWS altyapısı ile serverless olarak çalışmaktadır.
 
-Enterprise VT Scanner, kurumsal ihtiyaçlar için özel olarak tasarlanmış, gelişmiş güvenlik analizi platformudur. Kullanıcıların şüpheli dosyalarını güvenle yükleyip, 70+ antivirüs motoru ile kapsamlı analiz yapabilmelerini sağlar. Sonuçlar profesyonel PDF raporları halinde sunulur.
+Web sitesi: vt-scanner-1.vercel.app
 
-## ✨ Özellikler
+Özellikler
 
-### 🔒 Güvenlik
-- **End-to-End Şifreleme**: Dosya transferi sırasında maksimum güvenlik
-- **Güvenli Dosya İşleme**: AWS altyapısı ile güvenli dosya saklama
-- **SSL Sertifikası**: Tüm iletişim HTTPS üzerinden şifrelenir
+Hızlı Analiz: Dosyalar saniyeler içinde taranır.
 
-### 🚀 Performans
-- **Hızlı Analiz**: Gelişmiş algoritmalar ile saniyeler içinde sonuç
-- **Ölçeklenebilir Altyapı**: AWS Lambda ile otomatik ölçeklendirme
-- **Gerçek Zamanlı İzleme**: Analiz sürecini canlı takip etme
+Maksimum Güvenlik: End-to-end şifreleme ve güvenli dosya işleme.
 
-### �� Raporlama
-- **Profesyonel PDF Raporları**: Kurumsal standartlarda detaylı raporlar
-- **Analitik Veriler**: Güvenlik skorları ve istatistikler
-- **Çoklu Format Desteği**: Tüm dosya türlerini destekler
+Detaylı Raporlama: Profesyonel PDF raporları ve analitik veriler.
 
-## 🏗️ Teknik Mimari
+Cloud Native: AWS altyapısı ile ölçeklenebilir ve güvenilir.
 
-### Frontend
-- **HTML5 + CSS3**: Modern, responsive tasarım
-- **Vanilla JavaScript**: Framework bağımsız, hızlı performans
-- **Font Awesome**: Profesyonel ikonlar
-- **Inter Font**: Okunabilir tipografi
+API Desteği: Kurumsal entegrasyonlar için hazır API.
 
-### Backend
-- **AWS Lambda**: Serverless işlem gücü
-- **API Gateway**: RESTful API endpoint'leri
-- **S3 Storage**: Güvenli dosya saklama
-- **DynamoDB**: Hızlı veri erişimi
+Teknolojiler
 
-### Entegrasyon
-- **VirusTotal API**: 70+ antivirüs motoru entegrasyonu
-- **AWS SDK**: Boto3 ile AWS servisleri
-- **ReportLab**: PDF rapor oluşturma
+Frontend: HTML, CSS, JavaScript
 
-## 🚀 Kurulum ve Deployment
+Backend: AWS Lambda, Vercel Serverless Functions
 
-### Gereksinimler
-- AWS Hesabı
-- Python 3.9+
-- VirusTotal API Anahtarı
+Depolama ve Veri Yönetimi: AWS S3, AWS DynamoDB
 
-### Frontend Deployment (Vercel)
-```bash
-# Projeyi klonlayın
-git clone [repository-url]
-cd vt-scanner-frontend
+Güvenlik ve Anahtar Yönetimi: AWS Secrets Manager
 
-# Vercel'e deploy edin
-vercel --prod
-```
+Virüs Analizi: VirusTotal API
 
-### Backend Deployment (AWS)
-```bash
-# Lambda Layer oluşturun
-pip install -r requirements.txt -t python/
-zip -r lambda-layer.zip python/
+Kullanım
 
-# CloudFormation template'ini deploy edin
-aws cloudformation create-stack \
-  --stack-name vt-scanner-stack \
-  --template-body file://cloudformation-template.yaml \
-  --capabilities CAPABILITY_IAM
-```
+Web sitesini ziyaret edin: vt-scanner-1.vercel.app
 
-## 📱 Kullanım
+Dosyanızı seçin veya sürükleyin.
 
-### 1. Dosya Yükleme
-- Dosyayı sürükleyip bırakın veya tıklayarak seçin
-- Maksimum dosya boyutu: 32MB
-- Desteklenen formatlar: Tüm dosya türleri
+"Güvenlik Analizini Başlat" butonuna tıklayın.
 
-### 2. Güvenlik Analizi
-- "Güvenlik Analizini Başlat" butonuna tıklayın
-- Dosya AWS'e yüklenir ve VirusTotal'a gönderilir
-- Analiz süreci gerçek zamanlı takip edilir
+Analiz ilerleme çubuğunu takip edin.
 
-### 3. Sonuçları Görüntüleme
-- Analiz tamamlandığında detaylı sonuçlar gösterilir
-- Güvenlik skorları ve istatistikler sunulur
-- PDF raporu indirilebilir
+Analiz tamamlandığında detaylı sonuçları görüntüleyin ve PDF raporu indirin.
 
-## �� Konfigürasyon
+AWS Altyapısı ve Mimari
 
-### Environment Variables
-```bash
-VIRUSTOTAL_API_KEY=your_api_key_here
-S3_BUCKET=your_s3_bucket_name
-DYNAMODB_TABLE=your_dynamodb_table_name
-AWS_REGION=eu-central-1
-```
+Enterprise VT Scanner, AWS servisleri ve serverless mimari ile ölçeklenebilir, güvenli ve yüksek performanslı bir platform olarak tasarlanmıştır.
 
-### API Endpoints
-- `POST /vt-scanner` - Ana endpoint
-- Actions: `upload_file`, `scan_file`, `get_scan_status`, `download_report`
+Mimari Diyagram
+[ Kullanıcı / Browser ]
+          |
+          v
+[ Vercel Frontend ] ----> [ AWS Lambda Functions ]
+          |                        |
+          |                        v
+          |                  [ VirusTotal API ]
+          |                        |
+          v                        v
+      [ S3 Storage ] <-------- [ DynamoDB ]
+          |
+          v
+    [ PDF Raporlama ]
 
-## 📊 Güvenlik Özellikleri
+AWS Servisleri
 
-### Dosya Güvenliği
-- **Hash Doğrulama**: SHA-256 ile dosya bütünlüğü
-- **Boyut Limiti**: 32MB maksimum dosya boyutu
-- **Format Kontrolü**: Tüm dosya türleri desteklenir
+Vercel Serverless Frontend
 
-### API Güvenliği
-- **CORS Koruması**: Cross-origin istekler kontrol edilir
-- **Rate Limiting**: API kullanımı sınırlandırılır
-- **Input Validation**: Tüm girişler doğrulanır
+Kullanıcı arayüzü ve dosya yükleme işlemleri.
 
-## �� Test
+Smooth scroll ve modern responsive tasarım.
 
-### Frontend Test
-```bash
-# Tarayıcıda test edin
-https://your-vercel-app.vercel.app
-```
+AWS Lambda
 
-### Backend Test
-```bash
-# Lambda test event'i
-{
-  "action": "upload_file",
-  "file_content": "base64_encoded_content",
-  "file_name": "test.txt",
-  "file_size": 1024
-}
-```
+Dosya yükleme, VirusTotal API çağrısı ve veri işleme.
 
-## 📈 Performans Metrikleri
+Serverless yapı ile ölçeklenebilir ve düşük maliyetli çözüm.
 
-- **Dosya Yükleme**: < 5 saniye (32MB dosya)
-- **Analiz Süresi**: 10-30 saniye (dosya boyutuna bağlı)
-- **PDF Rapor**: < 3 saniye
-- **Uptime**: %99.9 AWS SLA
+AWS S3
 
-## 🔍 Monitoring ve Logging
+Yüklenen dosyaların güvenli şekilde depolanması.
 
-### CloudWatch Logs
-- Lambda fonksiyon logları
-- API Gateway erişim logları
-- Hata takibi ve analizi
+PDF raporlarının geçici veya kalıcı saklanması.
 
-### Metrics
-- Dosya yükleme sayısı
-- Analiz başarı oranı
-- API response time
-- Hata oranları
+AWS DynamoDB
 
-## �� Hata Yönetimi
+Tarama sonuçları ve metadata yönetimi.
 
-### Yaygın Hatalar
-- **CORS Hatası**: API Gateway CORS ayarlarını kontrol edin
-- **Lambda Timeout**: Memory ve timeout değerlerini artırın
-- **S3 Permission**: IAM rollerini doğrulayın
+Hızlı sorgulama ve güvenli veri depolama.
 
-### Troubleshooting
-```bash
-# CloudWatch loglarını kontrol edin
-aws logs describe-log-groups
-aws logs filter-log-events --log-group-name /aws/lambda/vt-scanner
-```
+AWS Secrets Manager
 
-## 💰 Maliyet Analizi
+API anahtarlarının güvenli yönetimi.
 
-### AWS Servisleri (Aylık)
-- **Lambda**: ~$5-15 (1000 istek/gün)
-- **S3**: ~$2-5 (100GB depolama)
-- **DynamoDB**: ~$3-8 (1M okuma/yazma)
-- **API Gateway**: ~$1-3 (1M istek)
+VirusTotal API ve diğer hassas bilgiler burada tutulur.
 
-### Toplam Tahmini Maliyet: $11-31/ay
+VirusTotal API
 
-## 🔮 Gelecek Geliştirmeler
+Dosya tarama ve zararlı yazılım tespiti.
 
-### Kısa Vadeli (1-3 ay)
-- [ ] Batch dosya analizi
-- [ ] Email rapor gönderimi
-- [ ] Webhook entegrasyonları
+70+ antivirüs motoru ile yüksek doğruluk.
 
-### Orta Vadeli (3-6 ay)
-- [ ] Mobile uygulama
-- [ ] API rate limiting
-- [ ] Advanced analytics dashboard
+PDF Raporlama
 
-### Uzun Vadeli (6+ ay)
-- [ ] Machine learning entegrasyonu
-- [ ] Multi-tenant architecture
-- [ ] Enterprise SSO
+Tarama sonuçları detaylı şekilde PDF formatında hazırlanır.
 
-## �� Katkıda Bulunma
+Kullanıcılar tek tıkla PDF raporunu indirebilir.
 
-1. Fork yapın
-2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
-3. Commit yapın (`git commit -m 'Add amazing feature'`)
-4. Push yapın (`git push origin feature/amazing-feature`)
-5. Pull Request oluşturun
+Güvenlik
 
-## 📞 İletişim
+SSL/TLS ile güvenli bağlantı
 
-- **Email**: serverless.vt@gmail.com
-- **Adres**: İstanbul, Türkiye
-- **Website**: https://vt-scanner-1.vercel.app/
+End-to-end şifreleme
+
+ISO 27001 ve GDPR uyumlu altyapı
+
+API anahtarları ve kritik veriler AWS Secrets Manager ile korunur
+
+Katkı
+
+Bu proje, kurumsal güvenlik analizi ve dosya tarama çözümleri geliştirmek isteyen geliştiriciler için örnek teşkil etmektedir.
+
 
 ## 🙏 Teşekkürler
 
