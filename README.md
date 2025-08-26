@@ -51,7 +51,7 @@ Enterprise VT Scanner, AWS servisleri ve serverless mimari ile ölçeklenebilir,
      |                        VirusTotal API 
      |                             |
      v                             v
-    S3 Storage  <--------          DynamoDB 
+    S3 Storage  <--------       DynamoDB 
      |
      v
  PDF Raporlama 
