@@ -932,11 +932,18 @@
                             file_size: this.currentFile.size
                         })
                     });
+                     const result = await response.json();
+                    console.log('=== FULL API RESPONSE ===');
+                    console.log('Raw response:', response);
+                    console.log('Response status:', response.status);
+                    console.log('Response ok:', response.ok);
+                    console.log('Response headers:', response.headers);
+                    console.log('Parsed result:', result);
+                    console.log('Result type:', typeof result);
+                    console.log('Result keys:', Object.keys(result));
+                    console.log('=== END API RESPONSE ===');
 
-                    const result = await response.json();
-                    console.log('API Response:', result);
-                    console.log('Response statusCode:', result.statusCode);
-                    console.log('Response body:', result.body);
+                   
                     
                     if (result.statusCode === 200) {
                         // Response yapısını kontrol et
