@@ -56,6 +56,7 @@ v v
 v
 [ PDF Raporlama ,
 ] 
+
 ### AWS Servisleri
 
 1. **Vercel Serverless Frontend**  
@@ -508,15 +509,6 @@ def create_response(status_code, body, cors_headers):
 7. **PDF Raporlama**  
    - Tarama sonuçları detaylı şekilde PDF formatında hazırlanır.  
    - Kullanıcılar tek tıkla PDF raporunu indirebilir.
-
----
-
-## Güvenlik
-
-- SSL/TLS ile güvenli bağlantı
-- End-to-end şifreleme
-- ISO 27001 ve GDPR uyumlu altyapı
-- API anahtarları ve kritik veriler AWS Secrets Manager ile korunur
 
 ---
 
