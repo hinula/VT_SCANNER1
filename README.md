@@ -41,21 +41,21 @@ Web sitesi: [vt-scanner-1.vercel.app](https://vt-scanner-1.vercel.app/)
 Enterprise VT Scanner, AWS servisleri ve serverless mimari ile ölçeklenebilir, güvenli ve yüksek performanslı bir platform olarak tasarlanmıştır.
 
 ### Mimari Diyagram
-
-###Kullanıcı / Browser 
-###  |
-###  v
-###Vercel Frontend ---->  AWS Lambda Functions 
-###  |                             |
-###  |                             v
-###  |                        VirusTotal API 
-###  |                             |
-###  v                             v
-###S3 Storage  <--------          DynamoDB 
-###  |
-###  v
-###PDF Raporlama 
-
+```
+ Kullanıcı / Browser 
+     |
+     v
+    Vercel Frontend ---->  AWS Lambda Functions 
+     |                             |
+     |                             v
+     |                        VirusTotal API 
+     |                             |
+     v                             v
+    S3 Storage  <--------          DynamoDB 
+     |
+     v
+ PDF Raporlama 
+````
 
 ### AWS Servisleri
 
