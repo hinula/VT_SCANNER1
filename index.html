@@ -909,6 +909,7 @@
                
 
             }
+            const fileContent = await this.fileToBase64(this.currentFile);
             try {
                     const response = await fetch(this.API_ENDPOINT, {
                         method: 'POST',
