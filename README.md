@@ -201,16 +201,11 @@ aws logs filter-log-events --log-group-name /aws/lambda/vt-scanner
 4. Push yapın (`git push origin feature/amazing-feature`)
 5. Pull Request oluşturun
 
-## 📄 Lisans
-
-Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
-
 ## 📞 İletişim
 
-- **Email**: info@enterprise-vtscanner.com
-- **Telefon**: +90 (212) XXX XX XX
+- **Email**: serverless.vt@gmail.com
 - **Adres**: İstanbul, Türkiye
-- **Website**: [https://enterprise-vtscanner.com](https://enterprise-vtscanner.com)
+- **Website**: https://vt-scanner-1.vercel.app/
 
 ## 🙏 Teşekkürler
 
