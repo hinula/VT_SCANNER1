@@ -906,10 +906,7 @@
                 this.scanButton.disabled = true;
                 this.loadingSpinner.style.display = 'inline-block';
 
-               
-
-            }
-            const fileContent = await this.fileToBase64(this.currentFile);
+                const fileContent = await this.fileToBase64(this.currentFile);
             try {
                     const response = await fetch(this.API_ENDPOINT, {
                         method: 'POST',
@@ -949,6 +946,11 @@
                 });
             }
 
+
+               
+
+            }
+            
             async startVTAnalysis(scanId) {
                 try {
                     const response = await fetch(this.API_ENDPOINT, {
