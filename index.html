@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>  VT Scanner - Kurumsal Güvenlik Analizi Platformu</title>
+    <title>Enterprise VT Scanner - Kurumsal Güvenlik Analizi Platformu</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -852,20 +852,25 @@
             }
 
             handleDragOver(e) {
+                console.log('Drag over event triggered');
                 e.preventDefault();
                 this.uploadArea.classList.add('dragover');
             }
 
             handleDragLeave(e) {
+                console.log('Drag leave event triggered');
                 e.preventDefault();
                 this.uploadArea.classList.remove('dragover');
             }
 
             handleDrop(e) {
+                console.log('Drop event triggered');
                 e.preventDefault();
                 this.uploadArea.classList.remove('dragover');
                 const files = e.dataTransfer.files;
+                console.log('Dropped files:', files);
                 if (files.length > 0) {
+                    console.log('Processing file:', files[0]);
                     this.processFile(files[0]);
                 }
             }
@@ -878,7 +883,12 @@
             }
 
             processFile(file) {
+                console.log('Processing file:', file);
+                console.log('File size:', file.size);
+                console.log('File name:', file.name);
+                
                 if (file.size > 32 * 1024 * 1024) {
+                    console.log('File too large');
                     this.showError('Dosya boyutu 32MB\'dan büyük olamaz.');
                     return;
                 }
@@ -889,6 +899,7 @@
                 this.selectedFile.classList.add('show');
                 this.scanButton.disabled = false;
                 this.hideError();
+                console.log('File processed successfully');
             }
 
             formatFileSize(bytes) {
@@ -923,10 +934,16 @@
                     });
 
                     const result = await response.json();
+                    console.log('API Response:', result);
+                    console.log('Response statusCode:', result.statusCode);
+                    console.log('Response body:', result.body);
                     
                     if (result.statusCode === 200) {
+                        this.scanId = result.body.scan_id; // scanId'yi set et
+                        console.log('Scan ID set to:', this.scanId);
                         await this.startVTAnalysis(result.body.scan_id);
                     } else {
+                        console.error('API Error:', result.body);
                         throw new Error(result.body.error || 'Bilinmeyen hata');
                     }
                 } catch (error) {
