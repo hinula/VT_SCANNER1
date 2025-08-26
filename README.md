@@ -65,8 +65,12 @@ v
 2. **AWS Lambda**  
    - Dosya yükleme, VirusTotal API çağrısı ve veri işleme.  
    - Serverless yapı ile ölçeklenebilir ve düşük maliyetli çözüm.
-   - AWS Lambda kodumuz:
-     # lambda_function.py
+   - ## Lambda Function
+
+Aşağıdaki Python kodu AWS Lambda üzerinde çalışacak olan `lambda_function.py` dosyasıdır:
+
+```python
+# lambda_function.py
 import json
 import boto3
 import hashlib
@@ -76,6 +80,7 @@ import base64
 from datetime import datetime
 from botocore.exceptions import ClientError
 from decimal import Decimal
+
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Decimal):
@@ -107,6 +112,7 @@ DEFAULT_CORS_HEADERS = {
 }
 
 def lambda_handler(event, context):
+    def lambda_handler(event, context):
     """
     Genel entry point. API Gateway (proxy) veya doğrudan invoke destekler.
     Beklenen POST body (JSON) örneği:
@@ -370,7 +376,7 @@ def process_vt_results(scan_id, vt_data, cors_headers):
             'total_scanners': total_scanners,
             'malicious_count': malicious_count,
             'clean_count': clean_count,
-            'detection_rate': Decimal(str(round(detection_rate, 2)))  # ✅ float yerine Decimal
+            'detection_rate': Decimal(str(round(detection_rate, 2)))  
         },
         ':updated_at': datetime.utcnow().isoformat()
     }
@@ -478,9 +484,11 @@ def create_response(status_code, body, cors_headers):
     return {
         'statusCode': status_code,
         'headers': cors_headers,
-        'body': json.dumps(body, ensure_ascii=False, cls=DecimalEncoder)  # ✅ Decimal destekli
+        'body': json.dumps(body, ensure_ascii=False, cls=DecimalEncoder)  
     }
-
+```
+     
+   
 3. **AWS S3**  
    - Yüklenen dosyaların güvenli şekilde depolanması.  
    - PDF raporlarının geçici veya kalıcı saklanması.
