@@ -910,45 +910,31 @@
 
             }
             try {
-    console.log("API Endpoint:", this.API_ENDPOINT);
+                    const response = await fetch(this.API_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'upload_file',
+                            file_content: fileContent,
+                            file_name: this.currentFile.name,
+                            file_size: this.currentFile.size
+                        })
+                    });
 
-    const response = await fetch(this.API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            action: 'upload_file',
-            file_content: fileContent,
-            file_name: this.currentFile.name,
-            file_size: this.currentFile.size
-        })
-    });
-
-    console.log("Raw response:", response);
-
-    let data;
-    try {
-        data = await response.json();
-    } catch (e) {
-        console.error("JSON parse hatası:", e);
-        const text = await response.text();
-        console.error("Sunucudan gelen raw text:", text);
-        throw new Error("Sunucudan geçerli JSON dönmedi");
-    }
-
-    if (!response.ok) {
-        throw new Error(data.error || `Sunucu hatası: ${response.status}`);
-    }
-
-    console.log("Dosya başarıyla yüklendi:", data);
-    alert("Dosya başarıyla yüklendi!");
-
-} catch (err) {
-    console.error("File upload error:", err);
-    alert("Hata: " + err.message);
-}
-
+                    const result = await response.json();
+                    
+                    if (result.statusCode === 200) {
+                        await this.startVTAnalysis(result.body.scan_id);
+                    } else {
+                        throw new Error(result.body.error || 'Bilinmeyen hata');
+                    }
+                } catch (error) {
+                    this.showError('Analiz sırasında bir hata oluştu: ' + error.message);
+                    this.hideProgress();
+                }
+            }
 
             fileToBase64(file) {
                 return new Promise((resolve, reject) => {
