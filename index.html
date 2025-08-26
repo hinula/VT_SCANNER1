@@ -943,16 +943,14 @@
                     console.log('Result keys:', Object.keys(result));
                     console.log('=== END API RESPONSE ===');
 
-                   
-                    
-                    if (result.statusCode === 200) {
-                        // Response yapısını kontrol et
+                   if (result.statusCode === 200 || (response.ok && result.scan_id)) {
+                        // statusCode yoksa response.ok kontrol et
                         if (result.body && result.body.scan_id) {
                             this.scanId = result.body.scan_id;
-                            console.log('Scan ID set to:', this.scanId);
+                            console.log('Scan ID set to (body):', this.scanId);
                             await this.startVTAnalysis(result.body.scan_id);
                         } else if (result.scan_id) {
-                            // Body yoksa direkt result'ta olabilir
+                            // Direkt result'ta
                             this.scanId = result.scan_id;
                             console.log('Scan ID set to (direct):', this.scanId);
                             await this.startVTAnalysis(result.scan_id);
@@ -960,6 +958,12 @@
                             console.error('No scan_id found in response:', result);
                             throw new Error('Scan ID bulunamadı');
                         }
+                    } else {
+                        const errorMsg = result.body ? result.body.error : result.error || 'Bilinmeyen hata';
+                        console.error('API Error:', errorMsg);
+                        throw new Error(errorMsg);
+                    }
+                    
                     } else {
                         const errorMsg = result.body ? result.body.error : result.error || 'Bilinmeyen hata';
                         console.error('API Error:', errorMsg);
