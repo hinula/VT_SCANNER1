@@ -1,6 +1,6 @@
 # Enterprise VT Scanner
 
-Enterprise VT Scanner, kurumsal güvenlik ihtiyaçları için tasarlanmış gelişmiş bir dosya analiz platformudur. Platform, yüklenen dosyaları kapsamlı bir şekilde analiz eder, güvenlik risklerini tespit eder ve profesyonel PDF raporları sunar. Web uygulaması Vercel üzerinde barındırılmakta olup, AWS altyapısı ile serverless olarak çalışmaktadır.  
+Enterprise VT Scanner, kurumsal güvenlik ihtiyaçları için tasarlanmış gelişmiş bir dosya analiz platformudur. Platform, yüklenen dosyaları kapsamlı bir şekilde analiz eder, güvenlik risklerini tespit eder ve PDF raporları sunar. Web uygulaması Vercel üzerinde barındırılmakta olup, AWS altyapısı ile serverless olarak çalışmaktadır.  
 
 
 ---
@@ -27,7 +27,7 @@ Enterprise VT Scanner, kurumsal güvenlik ihtiyaçları için tasarlanmış geli
 
 ## Kullanım
 
-1. Web sitesini ziyaret edin: ....
+1. Web sitesini ziyaret edin: ..
 2. Dosyanızı seçin veya sürükleyin.
 3. "Güvenlik Analizini Başlat" butonuna tıklayın.
 4. Analiz ilerleme çubuğunu takip edin.
@@ -65,10 +65,7 @@ Enterprise VT Scanner, AWS servisleri ve serverless mimari ile ölçeklenebilir,
 2. **AWS Lambda**  
    - Dosya yükleme, VirusTotal API çağrısı ve veri işleme.  
    - Serverless yapı ile ölçeklenebilir ve düşük maliyetli çözüm.
-   - ## Lambda Function
-
-Aşağıdaki Python kodu AWS Lambda üzerinde çalışacak olan `lambda_function.py` 
-     
+   - Lambda Function (`lambda_function.py`)     
    
 3. **AWS S3**  
    - Yüklenen dosyaların güvenli şekilde depolanması.  
