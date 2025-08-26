@@ -906,33 +906,37 @@
                 this.scanButton.disabled = true;
                 this.loadingSpinner.style.display = 'inline-block';
 
-                try {
-                    const fileContent = await this.fileToBase64(this.currentFile);
-                    
-                    const response = await fetch(this.API_ENDPOINT, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            action: 'upload_file',
-                            file_content: fileContent,
-                            file_name: this.currentFile.name,
-                            file_size: this.currentFile.size
-                        })
-                    });
+               try {
+    const response = await fetch(this.API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action: 'upload_file',
+            file_content: fileContent,
+            file_name: this.currentFile.name,
+            file_size: this.currentFile.size
+        })
+    });
 
-                    const result = await response.json();
-                    
-                    if (result.statusCode === 200) {
-                        await this.startVTAnalysis(result.body.scan_id);
-                    } else {
-                        throw new Error(result.body.error || 'Bilinmeyen hata');
-                    }
-                } catch (error) {
-                    this.showError('Analiz sırasında bir hata oluştu: ' + error.message);
-                    this.hideProgress();
-                }
+    // JSON parse etmeye çalış
+    const data = await response.json().catch(() => {
+        throw new Error("Sunucudan geçerli bir JSON yanıtı gelmedi");
+    });
+
+    if (!response.ok) {
+        throw new Error(data.error || `Sunucu hatası: ${response.status}`);
+    }
+
+    console.log("Dosya başarıyla yüklendi:", data);
+    alert("Dosya başarıyla yüklendi!");
+
+} catch (err) {
+    console.error("File upload error:", err);
+    alert("Hata: " + err.message);
+}
+
             }
 
             fileToBase64(file) {
