@@ -959,7 +959,7 @@
                             console.error('No scan_id found in response:', result);
                             throw new Error('Scan ID bulunamadı');
                         }
-                    } else {
+                     else {
                         const errorMsg = result.body ? result.body.error : result.error || 'Bilinmeyen hata';
                         console.error('API Error:', errorMsg);
                         throw new Error(errorMsg);
