@@ -6,7 +6,6 @@
     <title>Enterprise VT Scanner - Kurumsal Güvenlik Analizi Platformu</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
         :root {
             --primary-color: #1a365d;
@@ -807,8 +806,6 @@
             </div>
         </div>
     </footer>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
         class EnterpriseVTScanner {
@@ -854,20 +851,25 @@
             }
 
             handleDragOver(e) {
+                console.log('Drag over event triggered');
                 e.preventDefault();
                 this.uploadArea.classList.add('dragover');
             }
 
             handleDragLeave(e) {
+                console.log('Drag leave event triggered');
                 e.preventDefault();
                 this.uploadArea.classList.remove('dragover');
             }
 
             handleDrop(e) {
+                console.log('Drop event triggered');
                 e.preventDefault();
                 this.uploadArea.classList.remove('dragover');
                 const files = e.dataTransfer.files;
+                console.log('Dropped files:', files);
                 if (files.length > 0) {
+                    console.log('Processing file:', files[0]);
                     this.processFile(files[0]);
                 }
             }
@@ -880,7 +882,12 @@
             }
 
             processFile(file) {
+                console.log('Processing file:', file);
+                console.log('File size:', file.size);
+                console.log('File name:', file.name);
+                
                 if (file.size > 32 * 1024 * 1024) {
+                    console.log('File too large');
                     this.showError('Dosya boyutu 32MB\'dan büyük olamaz.');
                     return;
                 }
@@ -891,6 +898,7 @@
                 this.selectedFile.classList.add('show');
                 this.scanButton.disabled = false;
                 this.hideError();
+                console.log('File processed successfully');
             }
 
             formatFileSize(bytes) {
@@ -924,23 +932,32 @@
                         })
                     });
 
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP ${response.status}: ${errorText}`);
-                    }
-
                     const result = await response.json();
-                    console.log('Upload response:', result);
+                    console.log('API Response:', result);
+                    console.log('Response statusCode:', result.statusCode);
+                    console.log('Response body:', result.body);
                     
-                    if (result.scan_id) {
-                        this.scanId = result.scan_id;
-                        console.log('Scan ID set to:', this.scanId);
-                        await this.startVTAnalysis(result.scan_id);
+                    if (result.statusCode === 200) {
+                        // Response yapısını kontrol et
+                        if (result.body && result.body.scan_id) {
+                            this.scanId = result.body.scan_id;
+                            console.log('Scan ID set to:', this.scanId);
+                            await this.startVTAnalysis(result.body.scan_id);
+                        } else if (result.scan_id) {
+                            // Body yoksa direkt result'ta olabilir
+                            this.scanId = result.scan_id;
+                            console.log('Scan ID set to (direct):', this.scanId);
+                            await this.startVTAnalysis(result.scan_id);
+                        } else {
+                            console.error('No scan_id found in response:', result);
+                            throw new Error('Scan ID bulunamadı');
+                        }
                     } else {
-                        throw new Error('Scan ID bulunamadı');
+                        const errorMsg = result.body ? result.body.error : result.error || 'Bilinmeyen hata';
+                        console.error('API Error:', errorMsg);
+                        throw new Error(errorMsg);
                     }
                 } catch (error) {
-                    console.error('Scan error:', error);
                     this.showError('Analiz sırasında bir hata oluştu: ' + error.message);
                     this.hideProgress();
                 }
@@ -960,8 +977,6 @@
 
             async startVTAnalysis(scanId) {
                 try {
-                    console.log('Starting VT analysis for scan ID:', scanId);
-                    
                     const response = await fetch(this.API_ENDPOINT, {
                         method: 'POST',
                         headers: {
@@ -973,24 +988,14 @@
                         })
                     });
 
-                    console.log('VT Analysis response status:', response.status);
-                    
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP ${response.status}: ${errorText}`);
-                    }
-
                     const result = await response.json();
-                    console.log('VT Analysis result:', result);
                     
-                    if (result.status === 'completed' || result.message) {
-                        console.log('VT Analysis successful, checking status...');
+                    if (result.statusCode === 200) {
                         await this.checkScanStatus(scanId);
                     } else {
-                        throw new Error(result.error || 'Analiz başlatılamadı');
+                        throw new Error(result.body.error || 'Analiz başlatılamadı');
                     }
                 } catch (error) {
-                    console.error('VT Analysis error:', error);
                     this.showError('Analiz başlatılamadı: ' + error.message);
                     this.hideProgress();
                 }
@@ -998,8 +1003,6 @@
 
             async checkScanStatus(scanId) {
                 try {
-                    console.log('Checking scan status for scan ID:', scanId);
-                    
                     const response = await fetch(this.API_ENDPOINT, {
                         method: 'POST',
                         headers: {
@@ -1011,33 +1014,23 @@
                         })
                     });
 
-                    console.log('Status check response status:', response.status);
-                    
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP ${response.status}: ${errorText}`);
-                    }
-
                     const result = await response.json();
-                    console.log('Status check result:', result);
                     
-                    const status = result.status;
-                    console.log('Scan status:', status);
-                    
-                    if (status === 'completed') {
-                        console.log('Scan completed, showing results...');
-                        this.showResults(result);
-                    } else if (status === 'scanning') {
-                        console.log('Scan still in progress, checking again in 5 seconds...');
-                        this.updateProgress(50, 'Dosya analiz ediliyor...');
-                        setTimeout(() => this.checkScanStatus(scanId), 5000);
+                    if (result.statusCode === 200) {
+                        const status = result.body.status;
+                        
+                        if (status === 'completed') {
+                            this.showResults(result.body);
+                        } else if (status === 'scanning') {
+                            setTimeout(() => this.checkScanStatus(scanId), 5000);
+                        } else {
+                            this.updateProgress(50, 'Dosya analiz ediliyor...');
+                            setTimeout(() => this.checkScanStatus(scanId), 5000);
+                        }
                     } else {
-                        console.log('Scan in progress, checking again in 5 seconds...');
-                        this.updateProgress(25, 'Dosya yükleniyor...');
-                        setTimeout(() => this.checkScanStatus(scanId), 5000);
+                        throw new Error(result.body.error || 'Durum kontrol edilemedi');
                     }
                 } catch (error) {
-                    console.error('Status check error:', error);
                     this.showError('Durum kontrol edilemedi: ' + error.message);
                     this.hideProgress();
                 }
@@ -1066,117 +1059,79 @@
                 this.downloadPdf.style.display = 'inline-block';
             }
 
-           async downloadPDF() {
-    try {
-        // 1) API'den presigned report_url al
-        const response = await fetch(this.API_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'download_report', scan_id: this.scanId })
-        });
+            async downloadPDF() {
+                try {
+                    console.log('Downloading PDF for scan ID:', this.scanId);
+                    
+                    const response = await fetch(this.API_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'download_pdf',
+                            scan_id: this.scanId
+                        })
+                    });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
+                    console.log('Download response status:', response.status);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Download HTTP Error:', response.status, errorText);
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
 
-        const apiResult = await response.json();
-        // bazen API body içinde gövde dönebilir: esnek kontrol
-        const reportUrl = apiResult.report_url || (apiResult.body && apiResult.body.report_url);
-
-        if (!reportUrl) {
-            throw new Error('Rapor URL bulunamadı');
-        }
-
-        // 2) Eğer URL .pdf ile bitiyorsa doğrudan aç (S3'te pdf varsa)
-        if (/\.(pdf)(\?.*)?$/i.test(reportUrl)) {
-            window.open(reportUrl, '_blank');
-            return;
-        }
-
-        // 3) Değilse URL büyük ihtimalle JSON rapora işaret ediyor -> fetch et ve JSON al
-        const reportResp = await fetch(reportUrl);
-        if (!reportResp.ok) {
-            const txt = await reportResp.text();
-            throw new Error(`Rapor fetch hatası: HTTP ${reportResp.status} - ${txt}`);
-        }
-
-        const reportJSON = await reportResp.json();
-
-        // 4) jsPDF ile PDF oluştur
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-
-        // Basit stil ve başlangıç koordinatları
-        const left = 40;
-        let y = 60;
-        const lineHeight = 14;
-        doc.setFontSize(16);
-        doc.text(`Scan Report: ${reportJSON.scan_id || ''}`, left, y);
-        y += 24;
-
-        doc.setFontSize(11);
-        const writeLine = (label, value) => {
-            // uzun stringleri satırlara böl
-            const text = `${label}: ${String(value === undefined ? '' : value)}`;
-            const split = doc.splitTextToSize(text, 520); // sayfa genişliğine sığdır
-            doc.text(split, left, y);
-            y += split.length * lineHeight;
-            if (y > 750) { doc.addPage(); y = 60; }
-        };
-
-        writeLine('File Name', reportJSON.file_name);
-        writeLine('File Size', reportJSON.file_size);
-        writeLine('File Hash', reportJSON.file_hash);
-        writeLine('Scan Date', reportJSON.scan_date);
-        writeLine('Status', reportJSON.status);
-        y += 8;
-
-        // VT stats
-        const stats = reportJSON.stats || {};
-        doc.setFontSize(13);
-        doc.text('Statistics', left, y); y += 18;
-        doc.setFontSize(11);
-        for (const [k, v] of Object.entries(stats)) {
-            writeLine(k, v);
-        }
-        y += 8;
-
-        // Optional: longer vt_results summary (flatten some info)
-        const vt = reportJSON.vt_results || reportJSON.vt_results || {};
-        if (vt && typeof vt === 'object') {
-            doc.setFontSize(13);
-            doc.text('VT Results (summary)', left, y); y += 18;
-            doc.setFontSize(10);
-            // example: write detections summary if present
-            if (vt.scans) {
-                // list engines that detected
-                const detected = [];
-                for (const [engine, info] of Object.entries(vt.scans)) {
-                    if (info && info.detected) detected.push(`${engine} (${info.result || 'detected'})`);
+                    const result = await response.json();
+                    console.log('Download result:', result);
+                    
+                    // PDF URL'yi bul
+                    let pdfUrl = null;
+                    if (result.pdf_url) {
+                        pdfUrl = result.pdf_url;
+                    } else if (result.body && result.body.pdf_url) {
+                        pdfUrl = result.body.pdf_url;
+                    }
+                    
+                    if (pdfUrl) {
+                        console.log('PDF URL found:', pdfUrl);
+                        window.open(pdfUrl, '_blank');
+                    } else {
+                        console.error('PDF URL not found in response:', result);
+                        throw new Error('PDF URL bulunamadı. Response: ' + JSON.stringify(result));
+                    }
+                } catch (error) {
+                    console.error('PDF download error:', error);
+                    this.showError('PDF indirilemedi: ' + error.message);
                 }
-                if (detected.length) {
-                    writeLine('Detections', detected.join(', '));
-                } else {
-                    writeLine('Detections', 'None');
-                }
-            } else {
-                // fallback: stringify small vt object
-                writeLine('VT raw', JSON.stringify(vt).slice(0, 1000));
+            }
+
+            updateProgress(progress, status) {
+                this.progressFill.style.width = progress + '%';
+                this.statusText.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${status}`;
+            }
+
+            showProgress() {
+                this.progressSection.classList.add('show');
+                document.getElementById('uploadSection').style.display = 'none';
+            }
+
+            hideProgress() {
+                this.progressSection.classList.remove('show');
+                document.getElementById('uploadSection').style.display = 'block';
+                this.scanButton.disabled = false;
+                this.loadingSpinner.style.display = 'none';
+            }
+
+            showError(message) {
+                this.errorText.textContent = message;
+                this.errorMessage.classList.add('show');
+            }
+
+            hideError() {
+                this.errorMessage.classList.remove('show');
             }
         }
-
-        // 5) Kullanıcıya indirttir veya yeni pencerede aç
-        // doc.save(`VTScan_${reportJSON.scan_id || Date.now()}.pdf`);
-        const pdfBlob = doc.output('blob');
-        const url = URL.createObjectURL(pdfBlob);
-        window.open(url, '_blank');
-
-    } catch (error) {
-        console.error('PDF download error:', error);
-        this.showError('PDF indirilemedi: ' + error.message);
-    }
-}
 
         // Uygulama başlatıldığında
         document.addEventListener('DOMContentLoaded', () => {
