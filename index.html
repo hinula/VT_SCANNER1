@@ -924,24 +924,17 @@
 
                     if (!response.ok) {
                         const errorText = await response.text();
-                        console.error('HTTP Error:', response.status, errorText);
                         throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
 
                     const result = await response.json();
-                    console.log('API Response:', result);
+                    console.log('Upload response:', result);
                     
-                    // Response yapısını kontrol et
                     if (result.scan_id) {
                         this.scanId = result.scan_id;
                         console.log('Scan ID set to:', this.scanId);
                         await this.startVTAnalysis(result.scan_id);
-                    } else if (result.body && result.body.scan_id) {
-                        this.scanId = result.body.scan_id;
-                        console.log('Scan ID set to (body):', this.scanId);
-                        await this.startVTAnalysis(result.body.scan_id);
                     } else {
-                        console.error('No scan_id found in response:', result);
                         throw new Error('Scan ID bulunamadı');
                     }
                 } catch (error) {
@@ -962,7 +955,7 @@
                     reader.onerror = error => reject(error);
                 });
             }
-// ... existing code ...
+
             async startVTAnalysis(scanId) {
                 try {
                     console.log('Starting VT analysis for scan ID:', scanId);
@@ -982,20 +975,17 @@
                     
                     if (!response.ok) {
                         const errorText = await response.text();
-                        console.error('VT Analysis HTTP Error:', response.status, errorText);
                         throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
 
                     const result = await response.json();
                     console.log('VT Analysis result:', result);
                     
-                    // Response yapısını kontrol et
-                    if (result.statusCode === 200 || result.status === 'scanning' || result.message) {
+                    if (result.status === 'completed' || result.message) {
                         console.log('VT Analysis successful, checking status...');
                         await this.checkScanStatus(scanId);
                     } else {
-                        console.error('VT Analysis failed:', result);
-                        throw new Error(result.error || result.body?.error || 'Analiz başlatılamadı');
+                        throw new Error(result.error || 'Analiz başlatılamadı');
                     }
                 } catch (error) {
                     console.error('VT Analysis error:', error);
@@ -1023,20 +1013,18 @@
                     
                     if (!response.ok) {
                         const errorText = await response.text();
-                        console.error('Status check HTTP Error:', response.status, errorText);
                         throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
 
                     const result = await response.json();
                     console.log('Status check result:', result);
                     
-                    // Response yapısını kontrol et
-                    const status = result.status || result.body?.status;
+                    const status = result.status;
                     console.log('Scan status:', status);
                     
                     if (status === 'completed') {
                         console.log('Scan completed, showing results...');
-                        this.showResults(result.body || result);
+                        this.showResults(result);
                     } else if (status === 'scanning') {
                         console.log('Scan still in progress, checking again in 5 seconds...');
                         this.updateProgress(50, 'Dosya analiz ediliyor...');
@@ -1053,39 +1041,53 @@
                 }
             }
 
+            showResults(data) {
+                this.progressSection.classList.remove('show');
+                this.resultsSection.classList.add('show');
+                
+                if (data.stats) {
+                    this.displayResults(data.stats);
+                }
+            }
+
+            displayResults(stats) {
+                this.scanStatus.textContent = stats.malicious_count > 0 ? 'Zararlı Tespit Edildi' : 'Güvenli';
+                this.scanStatus.className = `scan-status status-${stats.malicious_count > 0 ? 'malicious' : 'clean'}`;
+                
+                this.maliciousCount.textContent = stats.malicious_count;
+                this.cleanCount.textContent = stats.clean_count;
+                this.totalCount.textContent = stats.total_scanners;
+                this.detectionRate.textContent = stats.detection_rate + '%';
+
+                this.scanDetailsText.textContent = `Dosyanız ${stats.total_scanners} güvenlik motoru tarafından analiz edildi. ${stats.malicious_count} motor zararlı yazılım tespit etti. Güvenlik skorunuz: ${100 - stats.detection_rate}%`;
+
+                this.downloadPdf.style.display = 'inline-block';
+            }
+
             async downloadPDF() {
                 try {
-                    console.log('Downloading PDF for scan ID:', this.scanId);
-                    
                     const response = await fetch(this.API_ENDPOINT, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            action: 'download_report',  // Lambda'da bu action var
+                            action: 'download_report',
                             scan_id: this.scanId
                         })
                     });
 
-                    console.log('PDF download response status:', response.status);
-                    
                     if (!response.ok) {
                         const errorText = await response.text();
-                        console.error('PDF download HTTP Error:', response.status, errorText);
                         throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
 
                     const result = await response.json();
-                    console.log('PDF download result:', result);
                     
-                    // Response yapısını kontrol et
                     if (result.pdf_url || (result.body && result.body.pdf_url)) {
                         const pdfUrl = result.pdf_url || result.body.pdf_url;
-                        console.log('Opening PDF URL:', pdfUrl);
                         window.open(pdfUrl, '_blank');
                     } else {
-                        console.error('No PDF URL in response:', result);
                         throw new Error('PDF URL bulunamadı');
                     }
                 } catch (error) {
@@ -1093,10 +1095,6 @@
                     this.showError('PDF indirilemedi: ' + error.message);
                 }
             }
-// ... existing code ...
-          
-
-         
 
             updateProgress(progress, status) {
                 this.progressFill.style.width = progress + '%';
