@@ -2,7 +2,6 @@
 
 Enterprise VT Scanner, kurumsal güvenlik ihtiyaçları için tasarlanmış gelişmiş bir dosya analiz platformudur. Platform, yüklenen dosyaları kapsamlı bir şekilde analiz eder, güvenlik risklerini tespit eder ve profesyonel PDF raporları sunar. Web uygulaması Vercel üzerinde barındırılmakta olup, AWS altyapısı ile serverless olarak çalışmaktadır.  
 
-Web sitesi: [vt-scanner-1.vercel.app](https://vt-scanner-1.vercel.app/)
 
 ---
 
