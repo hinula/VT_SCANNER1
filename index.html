@@ -852,25 +852,20 @@
             }
 
             handleDragOver(e) {
-                console.log('Drag over event triggered');
                 e.preventDefault();
                 this.uploadArea.classList.add('dragover');
             }
 
             handleDragLeave(e) {
-                console.log('Drag leave event triggered');
                 e.preventDefault();
                 this.uploadArea.classList.remove('dragover');
             }
 
             handleDrop(e) {
-                console.log('Drop event triggered');
                 e.preventDefault();
                 this.uploadArea.classList.remove('dragover');
                 const files = e.dataTransfer.files;
-                console.log('Dropped files:', files);
                 if (files.length > 0) {
-                    console.log('Processing file:', files[0]);
                     this.processFile(files[0]);
                 }
             }
@@ -883,12 +878,7 @@
             }
 
             processFile(file) {
-                console.log('Processing file:', file);
-                console.log('File size:', file.size);
-                console.log('File name:', file.name);
-                
                 if (file.size > 32 * 1024 * 1024) {
-                    console.log('File too large');
                     this.showError('Dosya boyutu 32MB\'dan büyük olamaz.');
                     return;
                 }
@@ -899,7 +889,6 @@
                 this.selectedFile.classList.add('show');
                 this.scanButton.disabled = false;
                 this.hideError();
-                console.log('File processed successfully');
             }
 
             formatFileSize(bytes) {
@@ -933,39 +922,30 @@
                         })
                     });
 
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('HTTP Error:', response.status, errorText);
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+
                     const result = await response.json();
-                    console.log('=== FULL API RESPONSE ===');
-                    console.log('Raw response:', response);
-                    console.log('Response status:', response.status);
-                    console.log('Response ok:', response.ok);
-                    console.log('Response headers:', response.headers);
-                    console.log('Parsed result:', result);
-                    console.log('Result type:', typeof result);
-                    console.log('Result keys:', Object.keys(result));
-                    console.log('=== END API RESPONSE ===');
+                    console.log('API Response:', result);
                     
                     // Response yapısını kontrol et
-                    if (result.statusCode === 200 || (response.ok && result.scan_id)) {
-                        // statusCode yoksa response.ok kontrol et
-                        if (result.body && result.body.scan_id) {
-                            this.scanId = result.body.scan_id;
-                            console.log('Scan ID set to (body):', this.scanId);
-                            await this.startVTAnalysis(result.body.scan_id);
-                        } else if (result.scan_id) {
-                            // Direkt result'ta
-                            this.scanId = result.scan_id;
-                            console.log('Scan ID set to (direct):', this.scanId);
-                            await this.startVTAnalysis(result.scan_id);
-                        } else {
-                            console.error('No scan_id found in response:', result);
-                            throw new Error('Scan ID bulunamadı');
-                        }
+                    if (result.scan_id) {
+                        this.scanId = result.scan_id;
+                        console.log('Scan ID set to:', this.scanId);
+                        await this.startVTAnalysis(result.scan_id);
+                    } else if (result.body && result.body.scan_id) {
+                        this.scanId = result.body.scan_id;
+                        console.log('Scan ID set to (body):', this.scanId);
+                        await this.startVTAnalysis(result.body.scan_id);
                     } else {
-                        const errorMsg = result.body ? result.body.error : result.error || 'Bilinmeyen hata';
-                        console.error('API Error:', errorMsg);
-                        throw new Error(errorMsg);
+                        console.error('No scan_id found in response:', result);
+                        throw new Error('Scan ID bulunamadı');
                     }
                 } catch (error) {
+                    console.error('Scan error:', error);
                     this.showError('Analiz sırasında bir hata oluştu: ' + error.message);
                     this.hideProgress();
                 }
@@ -996,14 +976,20 @@
                         })
                     });
 
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+
                     const result = await response.json();
                     
-                    if (result.statusCode === 200 || (response.ok && result.status)) {
+                    if (result.statusCode === 200 || result.status === 'scanning') {
                         await this.checkScanStatus(scanId);
                     } else {
-                        throw new Error(result.body ? result.body.error : 'Analiz başlatılamadı');
+                        throw new Error(result.error || result.body?.error || 'Analiz başlatılamadı');
                     }
                 } catch (error) {
+                    console.error('VT Analysis error:', error);
                     this.showError('Analiz başlatılamadı: ' + error.message);
                     this.hideProgress();
                 }
@@ -1022,23 +1008,27 @@
                         })
                     });
 
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+
                     const result = await response.json();
                     
-                    if (result.statusCode === 200 || (response.ok && result.status)) {
-                        const status = result.body ? result.body.status : result.status;
-                        
-                        if (status === 'completed') {
-                            this.showResults(result.body || result);
-                        } else if (status === 'scanning') {
-                            setTimeout(() => this.checkScanStatus(scanId), 5000);
-                        } else {
-                            this.updateProgress(50, 'Dosya analiz ediliyor...');
-                            setTimeout(() => this.checkScanStatus(scanId), 5000);
-                        }
+                    // Response yapısını kontrol et
+                    const status = result.status || result.body?.status;
+                    
+                    if (status === 'completed') {
+                        this.showResults(result.body || result);
+                    } else if (status === 'scanning') {
+                        this.updateProgress(50, 'Dosya analiz ediliyor...');
+                        setTimeout(() => this.checkScanStatus(scanId), 5000);
                     } else {
-                        throw new Error(result.body ? result.body.error : 'Durum kontrol edilemedi');
+                        this.updateProgress(25, 'Dosya yükleniyor...');
+                        setTimeout(() => this.checkScanStatus(scanId), 5000);
                     }
                 } catch (error) {
+                    console.error('Status check error:', error);
                     this.showError('Durum kontrol edilemedi: ' + error.message);
                     this.hideProgress();
                 }
@@ -1080,15 +1070,21 @@
                         })
                     });
 
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+
                     const result = await response.json();
                     
-                    if (result.statusCode === 200 || (response.ok && result.pdf_url)) {
-                        const pdfUrl = result.body ? result.body.pdf_url : result.pdf_url;
+                    if (result.pdf_url || (result.body && result.body.pdf_url)) {
+                        const pdfUrl = result.pdf_url || result.body.pdf_url;
                         window.open(pdfUrl, '_blank');
                     } else {
-                        throw new Error(result.body ? result.body.error : 'PDF oluşturulamadı');
+                        throw new Error('PDF URL bulunamadı');
                     }
                 } catch (error) {
+                    console.error('PDF download error:', error);
                     this.showError('PDF indirilemedi: ' + error.message);
                 }
             }
