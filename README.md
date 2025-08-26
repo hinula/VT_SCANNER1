@@ -103,6 +103,3 @@ Bu proje, kurumsal güvenlik analizi ve dosya tarama çözümleri geliştirmek i
 
 ---
 
-## Lisans
-
-Tüm hakları saklıdır. Enterprise VT Scanner © 2024
