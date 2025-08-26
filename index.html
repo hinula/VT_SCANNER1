@@ -932,7 +932,7 @@
                             file_size: this.currentFile.size
                         })
                     });
-                     const result = await response.json();
+                    const result = await response.json();
                     console.log('=== FULL API RESPONSE ===');
                     console.log('Raw response:', response);
                     console.log('Response status:', response.status);
@@ -942,8 +942,9 @@
                     console.log('Result type:', typeof result);
                     console.log('Result keys:', Object.keys(result));
                     console.log('=== END API RESPONSE ===');
-
-                   if (result.statusCode === 200 || (response.ok && result.scan_id)) {
+                    
+                    // Response yapısını kontrol et
+                    if (result.statusCode === 200 || (response.ok && result.scan_id)) {
                         // statusCode yoksa response.ok kontrol et
                         if (result.body && result.body.scan_id) {
                             this.scanId = result.body.scan_id;
@@ -958,6 +959,12 @@
                             console.error('No scan_id found in response:', result);
                             throw new Error('Scan ID bulunamadı');
                         }
+                    } else {
+                        const errorMsg = result.body ? result.body.error : result.error || 'Bilinmeyen hata';
+                        console.error('API Error:', errorMsg);
+                        throw new Error(errorMsg);
+                    }
+                     
                     } else {
                         const errorMsg = result.body ? result.body.error : result.error || 'Bilinmeyen hata';
                         console.error('API Error:', errorMsg);
