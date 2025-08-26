@@ -6,6 +6,7 @@
     <title>Enterprise VT Scanner - Kurumsal Güvenlik Analizi Platformu</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
             --primary-color: #1a365d;
@@ -797,16 +798,17 @@
                 </div>
                 <div class="footer-section">
                     <h4>İletişim</h4>
-                    <p>info@enterprise-vtscanner.com</p>
-                    <p>+90 (212) XXX XX XX</p>
+                    <p>serverless.vt@gmail.com</p>
                     <p>İstanbul, Türkiye</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 Enterprise VT Scanner. Tüm hakları saklıdır. | ISO 27001 Uyumlu | GDPR Uyumlu</p>
+                <p>&copy; 2025 Enterprise VT Scanner. Tüm hakları saklıdır. | ISO 27001 Uyumlu | GDPR Uyumlu</p>
             </div>
         </div>
     </footer>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
         class EnterpriseVTScanner {
@@ -1064,64 +1066,117 @@
                 this.downloadPdf.style.display = 'inline-block';
             }
 
-            async downloadPDF() {
-                try {
-                    const response = await fetch(this.API_ENDPOINT, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            action: 'download_report',
-                            scan_id: this.scanId
-                        })
-                    });
+           async downloadPDF() {
+    try {
+        // 1) API'den presigned report_url al
+        const response = await fetch(this.API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'download_report', scan_id: this.scanId })
+        });
 
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP ${response.status}: ${errorText}`);
-                    }
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
 
-                    const result = await response.json();
-                    
-                    if (result.pdf_url || (result.body && result.body.pdf_url)) {
-                        const pdfUrl = result.pdf_url || result.body.pdf_url;
-                        window.open(pdfUrl, '_blank');
-                    } else {
-                        throw new Error('PDF URL bulunamadı');
-                    }
-                } catch (error) {
-                    console.error('PDF download error:', error);
-                    this.showError('PDF indirilemedi: ' + error.message);
+        const apiResult = await response.json();
+        // bazen API body içinde gövde dönebilir: esnek kontrol
+        const reportUrl = apiResult.report_url || (apiResult.body && apiResult.body.report_url);
+
+        if (!reportUrl) {
+            throw new Error('Rapor URL bulunamadı');
+        }
+
+        // 2) Eğer URL .pdf ile bitiyorsa doğrudan aç (S3'te pdf varsa)
+        if (/\.(pdf)(\?.*)?$/i.test(reportUrl)) {
+            window.open(reportUrl, '_blank');
+            return;
+        }
+
+        // 3) Değilse URL büyük ihtimalle JSON rapora işaret ediyor -> fetch et ve JSON al
+        const reportResp = await fetch(reportUrl);
+        if (!reportResp.ok) {
+            const txt = await reportResp.text();
+            throw new Error(`Rapor fetch hatası: HTTP ${reportResp.status} - ${txt}`);
+        }
+
+        const reportJSON = await reportResp.json();
+
+        // 4) jsPDF ile PDF oluştur
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+        // Basit stil ve başlangıç koordinatları
+        const left = 40;
+        let y = 60;
+        const lineHeight = 14;
+        doc.setFontSize(16);
+        doc.text(`Scan Report: ${reportJSON.scan_id || ''}`, left, y);
+        y += 24;
+
+        doc.setFontSize(11);
+        const writeLine = (label, value) => {
+            // uzun stringleri satırlara böl
+            const text = `${label}: ${String(value === undefined ? '' : value)}`;
+            const split = doc.splitTextToSize(text, 520); // sayfa genişliğine sığdır
+            doc.text(split, left, y);
+            y += split.length * lineHeight;
+            if (y > 750) { doc.addPage(); y = 60; }
+        };
+
+        writeLine('File Name', reportJSON.file_name);
+        writeLine('File Size', reportJSON.file_size);
+        writeLine('File Hash', reportJSON.file_hash);
+        writeLine('Scan Date', reportJSON.scan_date);
+        writeLine('Status', reportJSON.status);
+        y += 8;
+
+        // VT stats
+        const stats = reportJSON.stats || {};
+        doc.setFontSize(13);
+        doc.text('Statistics', left, y); y += 18;
+        doc.setFontSize(11);
+        for (const [k, v] of Object.entries(stats)) {
+            writeLine(k, v);
+        }
+        y += 8;
+
+        // Optional: longer vt_results summary (flatten some info)
+        const vt = reportJSON.vt_results || reportJSON.vt_results || {};
+        if (vt && typeof vt === 'object') {
+            doc.setFontSize(13);
+            doc.text('VT Results (summary)', left, y); y += 18;
+            doc.setFontSize(10);
+            // example: write detections summary if present
+            if (vt.scans) {
+                // list engines that detected
+                const detected = [];
+                for (const [engine, info] of Object.entries(vt.scans)) {
+                    if (info && info.detected) detected.push(`${engine} (${info.result || 'detected'})`);
                 }
-            }
-
-            updateProgress(progress, status) {
-                this.progressFill.style.width = progress + '%';
-                this.statusText.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${status}`;
-            }
-
-            showProgress() {
-                this.progressSection.classList.add('show');
-                document.getElementById('uploadSection').style.display = 'none';
-            }
-
-            hideProgress() {
-                this.progressSection.classList.remove('show');
-                document.getElementById('uploadSection').style.display = 'block';
-                this.scanButton.disabled = false;
-                this.loadingSpinner.style.display = 'none';
-            }
-
-            showError(message) {
-                this.errorText.textContent = message;
-                this.errorMessage.classList.add('show');
-            }
-
-            hideError() {
-                this.errorMessage.classList.remove('show');
+                if (detected.length) {
+                    writeLine('Detections', detected.join(', '));
+                } else {
+                    writeLine('Detections', 'None');
+                }
+            } else {
+                // fallback: stringify small vt object
+                writeLine('VT raw', JSON.stringify(vt).slice(0, 1000));
             }
         }
+
+        // 5) Kullanıcıya indirttir veya yeni pencerede aç
+        // doc.save(`VTScan_${reportJSON.scan_id || Date.now()}.pdf`);
+        const pdfBlob = doc.output('blob');
+        const url = URL.createObjectURL(pdfBlob);
+        window.open(url, '_blank');
+
+    } catch (error) {
+        console.error('PDF download error:', error);
+        this.showError('PDF indirilemedi: ' + error.message);
+    }
+}
 
         // Uygulama başlatıldığında
         document.addEventListener('DOMContentLoaded', () => {
