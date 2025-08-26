@@ -932,6 +932,7 @@
                             file_size: this.currentFile.size
                         })
                     });
+
                     const result = await response.json();
                     console.log('=== FULL API RESPONSE ===');
                     console.log('Raw response:', response);
@@ -959,18 +960,6 @@
                             console.error('No scan_id found in response:', result);
                             throw new Error('Scan ID bulunamadı');
                         }
-                     else {
-                        const errorMsg = result.body ? result.body.error : result.error || 'Bilinmeyen hata';
-                        console.error('API Error:', errorMsg);
-                        throw new Error(errorMsg);
-                    }
-                     
-                    } else {
-                        const errorMsg = result.body ? result.body.error : result.error || 'Bilinmeyen hata';
-                        console.error('API Error:', errorMsg);
-                        throw new Error(errorMsg);
-                    }
-                    
                     } else {
                         const errorMsg = result.body ? result.body.error : result.error || 'Bilinmeyen hata';
                         console.error('API Error:', errorMsg);
@@ -1009,10 +998,10 @@
 
                     const result = await response.json();
                     
-                    if (result.statusCode === 200) {
+                    if (result.statusCode === 200 || (response.ok && result.status)) {
                         await this.checkScanStatus(scanId);
                     } else {
-                        throw new Error(result.body.error || 'Analiz başlatılamadı');
+                        throw new Error(result.body ? result.body.error : 'Analiz başlatılamadı');
                     }
                 } catch (error) {
                     this.showError('Analiz başlatılamadı: ' + error.message);
@@ -1035,11 +1024,11 @@
 
                     const result = await response.json();
                     
-                    if (result.statusCode === 200) {
-                        const status = result.body.status;
+                    if (result.statusCode === 200 || (response.ok && result.status)) {
+                        const status = result.body ? result.body.status : result.status;
                         
                         if (status === 'completed') {
-                            this.showResults(result.body);
+                            this.showResults(result.body || result);
                         } else if (status === 'scanning') {
                             setTimeout(() => this.checkScanStatus(scanId), 5000);
                         } else {
@@ -1047,7 +1036,7 @@
                             setTimeout(() => this.checkScanStatus(scanId), 5000);
                         }
                     } else {
-                        throw new Error(result.body.error || 'Durum kontrol edilemedi');
+                        throw new Error(result.body ? result.body.error : 'Durum kontrol edilemedi');
                     }
                 } catch (error) {
                     this.showError('Durum kontrol edilemedi: ' + error.message);
@@ -1093,10 +1082,11 @@
 
                     const result = await response.json();
                     
-                    if (result.statusCode === 200) {
-                        window.open(result.body.pdf_url, '_blank');
+                    if (result.statusCode === 200 || (response.ok && result.pdf_url)) {
+                        const pdfUrl = result.body ? result.body.pdf_url : result.pdf_url;
+                        window.open(pdfUrl, '_blank');
                     } else {
-                        throw new Error(result.body.error || 'PDF oluşturulamadı');
+                        throw new Error(result.body ? result.body.error : 'PDF oluşturulamadı');
                     }
                 } catch (error) {
                     this.showError('PDF indirilemedi: ' + error.message);
