@@ -523,134 +523,204 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <!-- JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 class EnterpriseVTScanner {
-    constructor() {
-        this.uploadArea = document.getElementById('uploadArea');
-        this.fileInput = document.getElementById('fileInput');
-        this.selectedFile = document.getElementById('selectedFile');
-        this.fileName = document.getElementById('fileName');
-        this.fileSize = document.getElementById('fileSize');
-        this.scanButton = document.getElementById('scanButton');
-        this.progressSection = document.getElementById('progressSection');
-        this.progressFill = document.getElementById('progressFill');
-        this.statusText = document.getElementById('statusText');
-        this.resultsSection = document.getElementById('resultsSection');
-        this.scanStatus = document.getElementById('scanStatus');
-        this.maliciousCount = document.getElementById('maliciousCount');
-        this.cleanCount = document.getElementById('cleanCount');
-        this.totalCount = document.getElementById('totalCount');
-        this.detectionRate = document.getElementById('detectionRate');
-        this.scanDetailsText = document.getElementById('scanDetailsText');
-        this.downloadPdfBtn = document.getElementById('downloadPdf');
-        this.errorMessage = document.getElementById('errorMessage');
-        this.errorText = document.getElementById('errorText');
-        this.loadingSpinner = document.getElementById('loadingSpinner');
+  constructor() {
+    this.initializeElements();
+    this.bindEvents();
+    this.currentFile = null;
+    this.scanId = null;
+    this.API_ENDPOINT = 'https://c8dtj7h38h.execute-api.eu-central-1.amazonaws.com/dev/vt-scanner';
+    this.companyName = "ACME Kurumsal"; // Örnek şirket adı
+    this.companyLogoUrl = "https://via.placeholder.com/150x50?text=ACME+Logo"; // Şirket logosu URL
+  }
 
-        this.initEvents();
+  initializeElements() {
+    this.uploadArea = document.getElementById('uploadArea');
+    this.fileInput = document.getElementById('fileInput');
+    this.selectedFile = document.getElementById('selectedFile');
+    this.fileName = document.getElementById('fileName');
+    this.fileSize = document.getElementById('fileSize');
+    this.scanButton = document.getElementById('scanButton');
+    this.loadingSpinner = document.getElementById('loadingSpinner');
+    this.errorMessage = document.getElementById('errorMessage');
+    this.errorText = document.getElementById('errorText');
+    this.progressSection = document.getElementById('progressSection');
+    this.progressFill = document.getElementById('progressFill');
+    this.statusText = document.getElementById('statusText');
+    this.resultsSection = document.getElementById('resultsSection');
+    this.scanStatus = document.getElementById('scanStatus');
+    this.maliciousCount = document.getElementById('maliciousCount');
+    this.cleanCount = document.getElementById('cleanCount');
+    this.totalCount = document.getElementById('totalCount');
+    this.detectionRate = document.getElementById('detectionRate');
+    this.scanDetailsText = document.getElementById('scanDetailsText');
+    this.downloadPdf = document.getElementById('downloadPdf');
+  }
+
+  bindEvents() {
+    this.uploadArea.addEventListener('click', () => this.fileInput.click());
+    this.uploadArea.addEventListener('dragover', e => this.handleDragOver(e));
+    this.uploadArea.addEventListener('dragleave', e => this.handleDragLeave(e));
+    this.uploadArea.addEventListener('drop', e => this.handleDrop(e));
+    this.fileInput.addEventListener('change', e => this.handleFileSelect(e));
+    this.scanButton.addEventListener('click', () => this.startScan());
+    this.downloadPdf.addEventListener('click', () => this.downloadPDF());
+  }
+
+  handleDragOver(e) { e.preventDefault(); this.uploadArea.classList.add('dragover'); }
+  handleDragLeave(e) { e.preventDefault(); this.uploadArea.classList.remove('dragover'); }
+  handleDrop(e) { e.preventDefault(); this.uploadArea.classList.remove('dragover'); if(e.dataTransfer.files.length) this.processFile(e.dataTransfer.files[0]); }
+  handleFileSelect(e) { if(e.target.files.length) this.processFile(e.target.files[0]); }
+
+  processFile(file) {
+    if(file.size > 32 * 1024 * 1024) { this.showError("Dosya boyutu 32MB'dan büyük olamaz."); return; }
+    this.currentFile = file;
+    this.fileName.textContent = file.name;
+    this.fileSize.textContent = this.formatFileSize(file.size);
+    this.selectedFile.classList.add('show');
+    this.scanButton.disabled = false;
+    this.hideError();
+  }
+
+  formatFileSize(bytes) {
+    if(bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes','KB','MB','GB'];
+    const i = Math.floor(Math.log(bytes)/Math.log(k));
+    return parseFloat((bytes/Math.pow(k,i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  async startScan() {
+    if(!this.currentFile) return;
+    this.showProgress();
+    this.scanButton.disabled = true;
+    this.loadingSpinner.style.display = 'inline-block';
+    try {
+      const fileContent = await this.fileToBase64(this.currentFile);
+      const response = await fetch(this.API_ENDPOINT,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action:'upload_file',file_content:fileContent,file_name:this.currentFile.name,file_size:this.currentFile.size})
+      });
+      if(!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
+      if(result.scan_id) {
+        this.scanId = result.scan_id;
+        await this.startVTAnalysis(result.scan_id);
+      } else throw new Error('Scan ID bulunamadı');
+    } catch(err) {
+      this.showError('Analiz sırasında bir hata oluştu: ' + err.message);
+      this.hideProgress();
     }
+  }
 
-    initEvents() {
-        this.uploadArea.addEventListener('click', () => this.fileInput.click());
-        this.fileInput.addEventListener('change', (e) => this.handleFile(e.target.files[0]));
+  fileToBase64(file) {
+    return new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = ()=>resolve(reader.result.split(',')[1]);
+      reader.onerror = err=>reject(err);
+    });
+  }
 
-        this.uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            this.uploadArea.classList.add('dragover');
-        });
-        this.uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            this.uploadArea.classList.remove('dragover');
-        });
-        this.uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            this.uploadArea.classList.remove('dragover');
-            if(e.dataTransfer.files.length) this.handleFile(e.dataTransfer.files[0]);
-        });
-
-        this.scanButton.addEventListener('click', () => this.startScan());
-        this.downloadPdfBtn.addEventListener('click', () => this.downloadPDF());
+  async startVTAnalysis(scanId) {
+    try {
+      const response = await fetch(this.API_ENDPOINT,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action:'scan_file',scan_id:scanId})
+      });
+      if(!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
+      if(result.status==='completed'||result.message) await this.checkScanStatus(scanId);
+      else throw new Error(result.error||'Analiz başlatılamadı');
+    } catch(err) {
+      this.showError('Analiz başlatılamadı: ' + err.message);
+      this.hideProgress();
     }
+  }
 
-    handleFile(file) {
-        if(!file) return;
-        this.selectedFile.classList.add('show');
-        this.fileName.textContent = file.name;
-        this.fileSize.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
-        this.scanButton.disabled = false;
-        this.errorMessage.style.display = 'none';
-    }
+  async checkScanStatus(scanId){
+    try {
+      const response = await fetch(this.API_ENDPOINT,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action:'get_scan_status',scan_id:scanId})
+      });
+      if(!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
+      if(result.status==='completed'){ this.showResults(result); }
+      else{
+        const progress = result.status==='scanning'?50:25;
+        const statusText = result.status==='scanning'?'Dosya analiz ediliyor...':'Dosya yükleniyor...';
+        this.updateProgress(progress,statusText);
+        setTimeout(()=>this.checkScanStatus(scanId),5000);
+      }
+    } catch(err){ this.showError('Durum kontrol edilemedi: '+err.message); this.hideProgress(); }
+  }
 
-    startScan() {
-        this.scanButton.disabled = true;
-        this.loadingSpinner.style.display = 'inline-block';
-        this.progressSection.classList.add('show');
-        this.resultsSection.classList.remove('show');
-        this.progressFill.style.width = '0%';
-        this.statusText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dosya yükleniyor ve analiz ediliyor...';
+  showResults(data){
+    this.progressSection.classList.remove('show');
+    this.resultsSection.classList.add('show');
+    if(data.stats) this.displayResults(data.stats);
+  }
 
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 10;
-            this.progressFill.style.width = progress + '%';
-            if(progress >= 100){
-                clearInterval(interval);
-                this.showResults();
-            }
-        }, 300);
-    }
+  displayResults(stats){
+    this.scanStatus.textContent = stats.malicious_count>0?'Zararlı Tespit Edildi':'Güvenli';
+    this.scanStatus.className = `scan-status status-${stats.malicious_count>0?'malicious':'clean'}`;
+    this.maliciousCount.textContent = stats.malicious_count;
+    this.cleanCount.textContent = stats.clean_count;
+    this.totalCount.textContent = stats.total_scanners;
+    this.detectionRate.textContent = stats.detection_rate + '%';
+    this.scanDetailsText.textContent = `Dosyanız ${stats.total_scanners} güvenlik motoru tarafından analiz edildi. ${stats.malicious_count} motor zararlı yazılım tespit etti. Güvenlik skorunuz: ${100-stats.detection_rate}%`;
+    this.downloadPdf.style.display = 'inline-block';
+  }
 
-    showResults() {
-        this.progressSection.classList.remove('show');
-        this.resultsSection.classList.add('show');
+  async downloadPDF(){
+    try{
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const date = new Date().toLocaleString();
+      // Logo
+      if(this.companyLogoUrl){
+        const img = new Image();
+        img.src = this.companyLogoUrl;
+        img.onload = ()=>doc.addImage(img,'PNG',15,10,50,15);
+        img.onerror = ()=>console.warn('Logo yüklenemedi');
+      }
+      doc.setFontSize(18);
+      doc.text(`${this.companyName} - Dosya Güvenlik Raporu`,15,40);
+      doc.setFontSize(12);
+      doc.text(`Dosya: ${this.currentFile.name}`,15,50);
+      doc.text(`Boyut: ${this.formatFileSize(this.currentFile.size)}`,15,57);
+      doc.text(`Tarama Zamanı: ${date}`,15,64);
+      doc.text(`Toplam Motor: ${this.totalCount.textContent}`,15,71);
+      doc.text(`Zararlı Tespit: ${this.maliciousCount.textContent}`,15,78);
+      doc.text(`Temiz Tespit: ${this.cleanCount.textContent}`,15,85);
+      doc.text(`Tespit Oranı: ${this.detectionRate.textContent}`,15,92);
+      doc.text(`Durum: ${this.scanStatus.textContent}`,15,99);
+      doc.save(`${this.currentFile.name}_rapor.pdf`);
+    } catch(err){ this.showError('PDF oluşturulamadı: '+err.message); }
+  }
 
-        // Fake Results
-        const malicious = Math.floor(Math.random()*5);
-        const clean = 70 - malicious;
-        const total = 70;
-        const rate = ((malicious/total)*100).toFixed(2);
-
-        this.maliciousCount.textContent = malicious;
-        this.cleanCount.textContent = clean;
-        this.totalCount.textContent = total;
-        this.detectionRate.textContent = rate + '%';
-
-        this.scanStatus.className = 'scan-status ' + (malicious ? 'status-malicious' : 'status-clean');
-        this.scanStatus.textContent = malicious ? 'Zararlı Bulundu' : 'Temiz';
-        this.scanDetailsText.textContent = 'Analiz tamamlandı. Dosyanız ' + (malicious ? 'zararlı içerik içeriyor.' : 'temiz.') ;
-
-        this.downloadPdfBtn.style.display = 'inline-block';
-        this.scanButton.disabled = false;
-        this.loadingSpinner.style.display = 'none';
-    }
-
-    downloadPDF() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.setFontSize(20);
-        doc.text("Enterprise VT Scanner - Analiz Raporu", 20, 20);
-        doc.setFontSize(14);
-        doc.text(`Dosya Adı: ${this.fileName.textContent}`, 20, 40);
-        doc.text(`Dosya Boyutu: ${this.fileSize.textContent}`, 20, 50);
-        doc.text(`Toplam Motor: ${this.totalCount.textContent}`, 20, 60);
-        doc.text(`Zararlı Tespit: ${this.maliciousCount.textContent}`, 20, 70);
-        doc.text(`Temiz Tespit: ${this.cleanCount.textContent}`, 20, 80);
-        doc.text(`Tespit Oranı: ${this.detectionRate.textContent}`, 20, 90);
-        doc.text(`Analiz Durumu: ${this.scanStatus.textContent}`, 20, 100);
-        doc.save("analiz_raporu.pdf");
-    }
+  updateProgress(progress,status){ this.progressFill.style.width = progress+'%'; this.statusText.innerHTML=`<i class="fas fa-spinner fa-spin"></i> ${status}`; }
+  showProgress(){ this.progressSection.classList.add('show'); document.getElementById('uploadSection').style.display='none'; }
+  hideProgress(){ this.progressSection.classList.remove('show'); document.getElementById('uploadSection').style.display='block'; this.scanButton.disabled=false; this.loadingSpinner.style.display='none'; }
+  showError(message){ this.errorText.textContent=message; this.errorMessage.classList.add('show'); }
+  hideError(){ this.errorMessage.classList.remove('show'); }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    new EnterpriseVTScanner();
-});
+document.addEventListener('DOMContentLoaded',()=>{ new EnterpriseVTScanner(); });
 
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if(target) target.scrollIntoView({ behavior:'smooth', block:'start' });
-    });
+// Smooth scrolling
+document.querySelectorAll('a[href^="#"]').forEach(anchor=>{
+  anchor.addEventListener('click',function(e){
+    e.preventDefault();
+    const target=document.querySelector(this.getAttribute('href'));
+    if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+  });
 });
 </script>
 </body>
