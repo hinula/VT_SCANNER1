@@ -42,19 +42,19 @@ Enterprise VT Scanner, AWS servisleri ve serverless mimari ile ölçeklenebilir,
 
 ### Mimari Diyagram
 
-Kullanıcı / Browser 
-     |
-     v
- Vercel Frontend ---->  AWS Lambda Functions 
-     |                             |
-     |                             v
-     |                        VirusTotal API 
-     |                             |
-     v                             v
- S3 Storage  <--------          DynamoDB 
-     |
-     v
-PDF Raporlama 
+###Kullanıcı / Browser 
+###  |
+###  v
+###Vercel Frontend ---->  AWS Lambda Functions 
+###  |                             |
+###  |                             v
+###  |                        VirusTotal API 
+###  |                             |
+###  v                             v
+###S3 Storage  <--------          DynamoDB 
+###  |
+###  v
+###PDF Raporlama 
 
 
 ### AWS Servisleri
